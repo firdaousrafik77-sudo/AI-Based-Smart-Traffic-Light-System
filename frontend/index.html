@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title> 🚦 Smart Traffic Control System - AI Optimized</title>
+    <link rel="stylesheet" href="/styles.css">
+    <style>
+        /* ----------------------------------------------
+            SMART TRAFFIC CONTROL SYSTEM - CONNECTED VERSION
+           ---------------------------------------------- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-gradient: linear-gradient(135deg, #0b2b40 0%, #1a4a6f 100%);
+            --card-bg: rgba(15, 25, 35, 0.75);
+            --card-hover-bg: rgba(30, 50, 70, 0.85);
+            --text-light: #f0f9ff;
+            --green-accent: #2ecc71;
+            --red-accent: #e74c3c;
+            --yellow-accent: #f39c12;
+            --shadow-sm: 0 8px 20px rgba(0,0,0,0.2);
+            --glow-green: 0 0 12px rgba(46,204,113,0.6);
+            --glow-yellow: 0 0 12px rgba(243,156,18,0.8);
+            --glow-red: 0 0 10px rgba(231,76,60,0.5);
+            --dark-glass: rgba(0,0,0,0.4);
+        }
+
+        body {
+            font-family: 'Poppins', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--primary-gradient);
+            color: var(--text-light);
+            min-height: 100vh;
+            padding: 20px 24px 40px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            background: linear-gradient(120deg, #ffffff, #b9e6ff);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: inline-block;
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding-bottom: 12px;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            font-weight: 400;
+            opacity: 0.85;
+            background: rgba(0,0,0,0.3);
+            padding: 5px 12px;
+            border-radius: 40px;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin: 30px 0 35px;
+        }
+
+        button {
+            padding: 12px 28px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(4px);
+            background: rgba(255,255,255,0.15);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            letter-spacing: 0.5px;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            filter: brightness(1.05);
+        }
+
+        .btn-start {
+            background: #2ecc71;
+            color: #0a2f1f;
+            box-shadow: 0 5px 12px rgba(46,204,113,0.3);
+        }
+        .btn-stop {
+            background: #e74c3c;
+        }
+        .btn-emergency {
+            background: #f39c12;
+            color: #2c1a00;
+        }
+
+        /* DASHBOARD GRID */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        /* Traffic card styles */
+        .traffic-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border-radius: 28px;
+            padding: 20px 18px;
+            transition: all 0.25s ease-in-out;
+            border: 1px solid rgba(255,255,255,0.25);
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .traffic-card:hover {
+            transform: translateY(-6px);
+            background: var(--card-hover-bg);
+            border-color: rgba(255,255,240,0.4);
+        }
+
+        /* State-specific card borders */
+        .traffic-card.green-highlight {
+            border-left: 7px solid var(--green-accent);
+            box-shadow: 0 8px 18px rgba(46,204,113,0.2);
+            background: linear-gradient(125deg, rgba(46,204,113,0.08), rgba(0,0,0,0.2));
+        }
+
+        .traffic-card.yellow-highlight {
+            border-left: 7px solid var(--yellow-accent);
+            background: linear-gradient(125deg, rgba(243,156,18,0.08), rgba(0,0,0,0.2));
+            box-shadow: 0 5px 14px rgba(243,156,18,0.15);
+        }
+
+        .traffic-card.red-highlight {
+            border-left: 7px solid var(--red-accent);
+            background: linear-gradient(125deg, rgba(231,76,60,0.08), rgba(0,0,0,0.2));
+        }
+
+        .road-name {
+            font-size: 1.7rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .vehicle-count {
+            font-size: 2.8rem;
+            font-weight: 800;
+            margin: 12px 0 6px;
+            line-height: 1;
+        }
+
+        /* Congestion progress bar */
+        .traffic-load-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            margin: 8px 0 6px;
+            overflow: hidden;
+        }
+
+        .traffic-load-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2ecc71, #f39c12, #e74c3c);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .flow-rate, .wait-time {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-top: 6px;
+        }
+
+        /* STATUS BADGE */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            background: transparent;
+        }
+
+        .status-active {
+            background: #2ecc71;
+            color: #0a2f1a;
+            box-shadow: 0 0 8px #2ecc71;
+        }
+        .status-warning {
+            background: #f39c12;
+            color: #2c1a00;
+            box-shadow: 0 0 8px #f39c12;
+            font-weight: 800;
+        }
+        .status-inactive {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .traffic-light-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 22px;
+            margin: 18px 0 12px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.05);
+            box-shadow: inset 0 0 14px rgba(0,0,0,0.12);
+        }
+
+        .traffic-light-card.green {
+            background: rgba(46,204,113,0.14);
+            border-color: rgba(46,204,113,0.25);
+        }
+
+        .traffic-light-card.yellow {
+            background: rgba(243,156,18,0.14);
+            border-color: rgba(243,156,18,0.25);
+        }
+
+        .traffic-light-card.red {
+            background: rgba(231,76,60,0.14);
+            border-color: rgba(231,76,60,0.25);
+        }
+
+        .traffic-light-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            box-shadow: 0 0 14px rgba(0,0,0,0.2);
+        }
+
+        .traffic-light-card.green .traffic-light-dot {
+            background: #2ecc71;
+            box-shadow: 0 0 18px rgba(46,204,113,0.8);
+        }
+
+        .traffic-light-card.yellow .traffic-light-dot {
+            background: #f39c12;
+            box-shadow: 0 0 18px rgba(243,156,18,0.8);
+        }
+
+        .traffic-light-card.red .traffic-light-dot {
+            background: #e74c3c;
+            box-shadow: 0 0 18px rgba(231,76,60,0.8);
+        }
+
+        .traffic-light-label {
+            font-size: 0.95rem;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            color: #f5f9ff;
+        }
+
+        /* Congestion warning */
+        .congestion-warning {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 30px;
+            background: rgba(243, 156, 18, 0.2);
+            border: 2px solid #f39c12;
+            font-weight: 600;
+            font-size: 0.8rem;
+            margin-top: 10px;
+            color: #f39c12;
+        }
+
+        .congestion-warning.active {
+            display: flex;
+        }
+
+        .congestion-warning.critical {
+            background: rgba(231, 76, 60, 0.2);
+            border-color: #e74c3c;
+            color: #e74c3c;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 18px;
+            margin: 20px 0 30px;
+        }
+
+        .metric-card {
+            background: var(--dark-glass);
+            backdrop-filter: blur(8px);
+            border-radius: 20px;
+            padding: 16px 12px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-top: 8px;
+            color: #f5f9ff;
+        }
+
+        .recommendations {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(12px);
+            border-radius: 28px;
+            padding: 20px 24px;
+            margin-top: 28px;
+        }
+
+        /* Heavy Traffic Warning Banner */
+        .heavy-traffic-section {
+            background: linear-gradient(125deg, rgba(243,156,18,0.15), rgba(231,76,60,0.1));
+            backdrop-filter: blur(10px);
+            border: 2px solid #f39c12;
+            border-radius: 20px;
+            padding: 18px 20px;
+            margin-top: 28px;
+            display: none;
+        }
+
+        .heavy-traffic-section.active {
+            display: block;
+        }
+
+        .heavy-traffic-section h3 {
+            font-size: 1.3rem;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #f39c12;
+        }
+
+        .congestion-road-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .congestion-road-item {
+            background: rgba(243,156,18,0.3);
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            border-left: 4px solid #f39c12;
+        }
+
+        /* Emergency Section Styles */
+        .emergency-section {
+            background: linear-gradient(125deg, rgba(231,76,60,0.15), rgba(243,156,18,0.1));
+            backdrop-filter: blur(10px);
+            border: 2px solid #e74c3c;
+            border-radius: 20px;
+            padding: 18px 20px;
+            margin-top: 28px;
+            display: none;
+        }
+
+        .emergency-section.active {
+            display: block;
+        }
+
+        .emergency-section h3 {
+            font-size: 1.3rem;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #e74c3c;
+        }
+
+        .emergency-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .emergency-item {
+            background: rgba(231,76,60,0.2);
+            padding: 12px 16px;
+            border-radius: 16px;
+            border-left: 4px solid #e74c3c;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .emergency-item.high-priority {
+            background: rgba(231,76,60,0.3);
+            border-left-color: #c0392b;
+        }
+
+        .emergency-item.medium-priority {
+            background: rgba(243,156,18,0.2);
+            border-left-color: #f39c12;
+        }
+
+        .emergency-item.low-priority {
+            background: rgba(46,204,113,0.2);
+            border-left-color: #2ecc71;
+        }
+
+        .emergency-icon {
+            font-size: 1.5rem;
+        }
+
+        .emergency-details {
+            flex: 1;
+        }
+
+        .emergency-type {
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+
+        .emergency-location, .emergency-time {
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+
+        .recommendations h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .recommendation-item {
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 18px;
+            margin-bottom: 12px;
+            border-left: 4px solid #f39c12;
+        }
+
+        /* Emergency Log Panel Styles */
+        .emergency-log-panel {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(12px);
+            border-radius: 28px;
+            padding: 20px 24px;
+            margin-top: 28px;
+            border: 1px solid rgba(255,255,255,0.25);
+        }
+
+        .emergency-log-panel h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .emergency-log-list {
+            max-height: 300px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .emergency-log-item {
+            background: rgba(255,255,255,0.08);
+            padding: 10px 14px;
+            border-radius: 12px;
+            border-left: 4px solid #e74c3c;
+            font-size: 0.85rem;
+        }
+
+        .emergency-log-item.accident {
+            border-left-color: #e74c3c;
+        }
+
+        .emergency-log-item.ambulance, .emergency-log-item.fire_truck, .emergency-log-item.police {
+            border-left-color: #f39c12;
+        }
+
+        .emergency-log-item.congestion {
+            border-left-color: #f39c12;
+        }
+
+        .emergency-log-item.time_based, .emergency-log-item.weather, .emergency-log-item.predictive {
+            border-left-color: #2ecc71;
+        }
+
+        .emergency-log-item.manual {
+            border-left-color: #9b59b6;
+        }
+
+        .emergency-log-type {
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .emergency-log-details {
+            opacity: 0.9;
+            font-size: 0.8rem;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 14px 24px;
+            background: #1e2a3a;
+            color: white;
+            border-radius: 60px;
+            font-weight: 500;
+            z-index: 2000;
+            box-shadow: 0 6px 18px black;
+            backdrop-filter: blur(8px);
+            animation: slideInRight 0.25s ease-out;
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(120%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            to { opacity: 0; transform: translateX(30px); }
+        }
+
+        .predictions {
+            background: rgba(0,0,0,0.5);
+            border-radius: 20px;
+            padding: 10px 12px;
+            margin-top: 18px;
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 680px) {
+            body { padding: 16px; }
+            .vehicle-count { font-size: 2rem; }
+            .road-name { font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header-section">
+        <h1>🚦 Smart Traffic Control System</h1>
+        <div class="subtitle">⚡ AI Predictions | Adaptive Signals | Live Optimization</div>
+    </div>
+
+    <div class="controls">
+        <button class="btn-start" id="startSimBtn" onclick="startSimulation()">▶ Start Simulation</button>
+        <button class="btn-stop" id="stopSimBtn" onclick="stopSimulation()">⏹ Stop Simulation</button>
+        <button class="btn-emergency" id="emergencyBtn" onclick="triggerEmergency()">🚨 Emergency Mode</button>
+    </div>
+
+    <div id="dashboard" class="dashboard">
+        <!-- dynamic traffic cards will appear here -->
+        <div style="text-align:center; grid-column:1/-1;">✨ Click "Start Simulation" to begin AI-driven traffic control</div>
+    </div>
+
+    <div class="heavy-traffic-section" id="heavy-traffic-section">
+        <h3>⚠️ HEAVY TRAFFIC - CONGESTION WARNING</h3>
+        <div class="congestion-road-list" id="congestion-roads-list"></div>
+    </div>
+
+    <div class="emergency-section" id="emergency-section">
+        <h3>🚨 ACTIVE EMERGENCIES</h3>
+        <div class="emergency-list" id="emergency-list">
+            <div class="emergency-item">
+                <div class="emergency-icon">🚨</div>
+                <div class="emergency-details">
+                    <div class="emergency-type">SYSTEM READY</div>
+                    <div class="emergency-location">No active emergencies</div>
+                    <div class="emergency-time">Monitoring all roads</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="metrics-grid" id="metrics"></div>
+
+    <div class="recommendations" id="recommendations">
+        <h3>💡 AI Recommendations</h3>
+        <div id="recommendations-list">System ready. Start simulation for insights.</div>
+    </div>
+
+    <div class="emergency-log-panel">
+        <h3>📋 Emergency Log</h3>
+        <div class="emergency-log-list" id="emergency-log-list">
+            <div class="emergency-log-item">
+                <div class="emergency-log-type">SYSTEM INITIALIZED</div>
+                <div class="emergency-log-details">Emergency detection system ready • Monitoring all roads • No emergencies detected</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include the external JavaScript file with correct static path -->
+<script src="/script.js"></script>
+</body>
+</html>

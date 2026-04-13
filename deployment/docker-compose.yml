@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  traffic-control:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smart-traffic-system
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=3000
+      - DEBUG=${DEBUG:-False}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - ML_TRAINING_SAMPLES=${ML_TRAINING_SAMPLES:-5000}
+      - SPAWN_RATE_RUSH_HOUR=${SPAWN_RATE_RUSH_HOUR:-2}
+      - SPAWN_RATE_NORMAL=${SPAWN_RATE_NORMAL:-3}
+      - SPAWN_RATE_NIGHT=${SPAWN_RATE_NIGHT:-5}
+      - CONGESTION_THRESHOLD=${CONGESTION_THRESHOLD:-60}
+      - EMERGENCY_TRAFFIC_THRESHOLD=${EMERGENCY_TRAFFIC_THRESHOLD:-100}
+    volumes:
+      - ./backend:/app/backend
+      - ./frontend:/app/frontend
+      - ./data:/app/data
+      - traffic-db:/app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:3000/api/state')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  traffic-db:
+    driver: local
