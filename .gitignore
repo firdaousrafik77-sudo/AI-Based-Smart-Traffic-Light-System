@@ -51,10 +51,10 @@ venv.bak/
 .env.local
 .env.*.local
 
-# Models
+# ML model artifacts (*.pkl and *.joblib cover all saved model files)
 *.pkl
 *.joblib
-models/
+ml_models/
 
 # Data
 data/processed/
