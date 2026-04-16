@@ -54,6 +54,9 @@ EMERGENCY_PRIORITY_DURATION = int(os.getenv("EMERGENCY_PRIORITY_DURATION", "10")
 # Database
 DB_PATH = os.getenv("DB_PATH", str(Path(__file__).parent.parent / "traffic_system.db"))
 
+# Saved ML model artifacts (flow_model.joblib, congestion_model.joblib, scaler.joblib)
+MODELS_DIR = os.getenv("MODELS_DIR", str(Path(__file__).parent.parent / "ml_models"))
+
 # RL Optimizer settings
 RL_LEARNING_RATE = float(os.getenv("RL_LEARNING_RATE", "0.1"))
 RL_DISCOUNT_FACTOR = float(os.getenv("RL_DISCOUNT_FACTOR", "0.95"))

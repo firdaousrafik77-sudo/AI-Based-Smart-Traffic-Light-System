@@ -1,36 +1,39 @@
-"""SQLite database module for traffic system persistence"""
+"""
+Layer 2 - Data: SQLite database
+Responsible for reading and writing data to disk.
+Nothing here makes decisions — it only stores and retrieves.
+"""
 
 import sqlite3
-import json
-from datetime import datetime
-from pathlib import Path
 import logging
+from pathlib import Path
 from typing import Dict, List, Optional
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-DB_PATH = Path(__file__).parent.parent / "traffic_system.db"
 
 class TrafficDatabase:
-    """Handle database operations for traffic system"""
-    
-    def __init__(self, db_path: Path = DB_PATH):
+    """Handles all database operations for the traffic system."""
+
+    def __init__(self, db_path: Path):
         self.db_path = db_path
-        self.init_db()
-    
-    def get_connection(self):
-        """Get database connection"""
+        self._init_tables()
+
+    # ------------------------------------------------------------------ #
+    #  Internal helpers                                                    #
+    # ------------------------------------------------------------------ #
+
+    def _connect(self):
+        """Open a connection with dict-style row access."""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         return conn
-    
-    def init_db(self):
-        """Initialize database tables"""
-        conn = self.get_connection()
+
+    def _init_tables(self):
+        """Create tables if they do not exist yet."""
+        conn = self._connect()
         cursor = conn.cursor()
-        
-        # Metrics table
+
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS metrics (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,8 +44,7 @@ class TrafficDatabase:
                 emergency_activations INTEGER
             )
         ''')
-        
-        # Traffic data table
+
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS traffic_data (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,8 +56,7 @@ class TrafficDatabase:
                 current_green TEXT
             )
         ''')
-        
-        # Predictions table
+
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS predictions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -67,8 +68,7 @@ class TrafficDatabase:
                 congestion_level INTEGER
             )
         ''')
-        
-        # Emergency events table
+
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS emergency_events (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -79,8 +79,7 @@ class TrafficDatabase:
                 response_time_seconds INTEGER
             )
         ''')
-        
-        # System log table
+
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS system_logs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -89,36 +88,34 @@ class TrafficDatabase:
                 message TEXT
             )
         ''')
-        
+
         conn.commit()
         conn.close()
-        logger.info(f"Database initialized at {self.db_path}")
-    
+        logger.info(f"Database ready at {self.db_path}")
+
+    # ------------------------------------------------------------------ #
+    #  Write operations                                                    #
+    # ------------------------------------------------------------------ #
+
     def save_metrics(self, metrics: Dict):
-        """Save system metrics"""
-        conn = self.get_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            INSERT INTO metrics 
-            (total_throughput, average_wait_time, congestion_events, emergency_activations)
+        conn = self._connect()
+        conn.execute('''
+            INSERT INTO metrics (total_throughput, average_wait_time,
+                                 congestion_events, emergency_activations)
             VALUES (?, ?, ?, ?)
         ''', (
             metrics.get('total_throughput', 0),
             metrics.get('average_wait_time', 0),
             metrics.get('congestion_events', 0),
-            metrics.get('emergency_activations', 0)
+            metrics.get('emergency_activations', 0),
         ))
-        
         conn.commit()
         conn.close()
-    
-    def save_traffic_data(self, traffic: Dict[str, int], current_green: Optional[str] = None):
-        """Save traffic data snapshot"""
-        conn = self.get_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute('''
+
+    def save_traffic_data(self, traffic: Dict[str, int],
+                          current_green: Optional[str] = None):
+        conn = self._connect()
+        conn.execute('''
             INSERT INTO traffic_data (north, south, east, west, current_green)
             VALUES (?, ?, ?, ?, ?)
         ''', (
@@ -126,18 +123,14 @@ class TrafficDatabase:
             traffic.get('South', 0),
             traffic.get('East', 0),
             traffic.get('West', 0),
-            current_green
+            current_green,
         ))
-        
         conn.commit()
         conn.close()
-    
+
     def save_prediction(self, prediction: Dict):
-        """Save ML prediction"""
-        conn = self.get_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute('''
+        conn = self._connect()
+        conn.execute('''
             INSERT INTO predictions (north, south, east, west, congestion_level)
             VALUES (?, ?, ?, ?, ?)
         ''', (
@@ -145,109 +138,80 @@ class TrafficDatabase:
             prediction.get('South', 0),
             prediction.get('East', 0),
             prediction.get('West', 0),
-            prediction.get('congestion_level', 0)
+            prediction.get('congestion_level', 0),
         ))
-        
         conn.commit()
         conn.close()
-    
-    def save_emergency_event(self, event_type: str, location: str, priority: int, response_time: int = 0):
-        """Save emergency event"""
-        conn = self.get_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            INSERT INTO emergency_events (event_type, location, priority, response_time_seconds)
+
+    def save_emergency_event(self, event_type: str, location: str,
+                             priority: int, response_time: int = 0):
+        conn = self._connect()
+        conn.execute('''
+            INSERT INTO emergency_events
+                (event_type, location, priority, response_time_seconds)
             VALUES (?, ?, ?, ?)
         ''', (event_type, location, priority, response_time))
-        
         conn.commit()
         conn.close()
-    
+
     def save_log(self, level: str, message: str):
-        """Save system log"""
-        conn = self.get_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            INSERT INTO system_logs (level, message)
-            VALUES (?, ?)
-        ''', (level, message))
-        
+        conn = self._connect()
+        conn.execute('INSERT INTO system_logs (level, message) VALUES (?, ?)',
+                     (level, message))
         conn.commit()
         conn.close()
-    
+
+    # ------------------------------------------------------------------ #
+    #  Read operations                                                     #
+    # ------------------------------------------------------------------ #
+
     def get_metrics_summary(self, hours: int = 1) -> Dict:
-        """Get metrics summary for last N hours"""
-        conn = self.get_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute(f'''
-            SELECT 
-                AVG(total_throughput) as avg_throughput,
-                AVG(average_wait_time) as avg_wait_time,
-                SUM(congestion_events) as total_congestion,
-                SUM(emergency_activations) as total_emergencies
+        conn = self._connect()
+        row = conn.execute(f'''
+            SELECT
+                AVG(total_throughput)    AS avg_throughput,
+                AVG(average_wait_time)   AS avg_wait_time,
+                SUM(congestion_events)   AS total_congestion,
+                SUM(emergency_activations) AS total_emergencies
             FROM metrics
             WHERE timestamp >= datetime('now', '-{hours} hours')
-        ''')
-        
-        row = cursor.fetchone()
+        ''').fetchone()
         conn.close()
-        
         return {
-            'avg_throughput': row[0] or 0,
-            'avg_wait_time': row[1] or 0,
+            'avg_throughput':   row[0] or 0,
+            'avg_wait_time':    row[1] or 0,
             'total_congestion': row[2] or 0,
-            'total_emergencies': row[3] or 0
+            'total_emergencies':row[3] or 0,
         }
-    
+
     def get_recent_traffic(self, limit: int = 100) -> List[Dict]:
-        """Get recent traffic data"""
-        conn = self.get_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute('''
+        conn = self._connect()
+        rows = conn.execute('''
             SELECT timestamp, north, south, east, west, current_green
-            FROM traffic_data
-            ORDER BY timestamp DESC
-            LIMIT ?
-        ''', (limit,))
-        
-        rows = cursor.fetchall()
+            FROM traffic_data ORDER BY timestamp DESC LIMIT ?
+        ''', (limit,)).fetchall()
         conn.close()
-        
         return [dict(row) for row in rows]
-    
+
     def get_emergency_events(self, hours: int = 24) -> List[Dict]:
-        """Get emergency events from last N hours"""
-        conn = self.get_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute(f'''
+        conn = self._connect()
+        rows = conn.execute(f'''
             SELECT timestamp, event_type, location, priority, response_time_seconds
             FROM emergency_events
             WHERE timestamp >= datetime('now', '-{hours} hours')
             ORDER BY timestamp DESC
-        ''')
-        
-        rows = cursor.fetchall()
+        ''').fetchall()
         conn.close()
-        
         return [dict(row) for row in rows]
-    
+
     def cleanup_old_data(self, days: int = 7):
-        """Clean up data older than N days"""
-        conn = self.get_connection()
-        cursor = conn.cursor()
-        
-        tables = ['metrics', 'traffic_data', 'predictions', 'system_logs']
-        for table in tables:
-            cursor.execute(f'''
+        """Delete records older than N days to keep the DB small."""
+        conn = self._connect()
+        for table in ['metrics', 'traffic_data', 'predictions', 'system_logs']:
+            conn.execute(f'''
                 DELETE FROM {table}
                 WHERE timestamp < datetime('now', '-{days} days')
             ''')
-        
         conn.commit()
         conn.close()
         logger.info(f"Cleaned up data older than {days} days")
